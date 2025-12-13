@@ -1,0 +1,151 @@
+#!/bin/bash
+
+# This script is a shortcut to run tmux
+
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+help() {
+    printf "Usage: t [OPTION] [PARAMETERS]\n\n"
+    printf "Options:\n"
+    printf "    No Option: If not in tmux, attach or create. If in tmux, show help.\n"
+    printf "    ${BLUE}d${NC}:  Detach from tmux\n"
+    printf "    ${BLUE}l${NC}:  List all windows\n"
+    printf "    ${BLUE}la${NC}: List all windows with RUN or DONE\n"
+    printf "    ${BLUE}lr${NC}: List all Run windows\n"
+    printf "    ${BLUE}ld${NC}: List all Done windows\n"
+    printf "    ${BLUE}ar${NC}: Attach to the first or next RUN window\n"
+    printf "    ${BLUE}ad${NC}: Attach to the first or next DONE window\n"
+    printf "    ${BLUE}xd${NC}: Close all DONE windows\n\n"
+    printf "Parameters:\n"
+    printf "    ${BLUE}-y${NC}: Skip confirmation\n"
+}
+
+if [ "$#" -eq 0 ]; then
+    if [ -z "$TMUX" ]; then
+        # attach if there is a session, otherwise create a new session
+        if tmux list-sessions &>/dev/null; then
+            tmux attach
+            exit 0
+        else
+            tmux new
+            exit 0
+        fi
+    else
+        help
+        exit 0
+    fi
+fi
+
+case "$1" in
+    "d")
+        tmux detach
+        exit 0
+        ;;
+    "l")
+        tmux list-windows -a -F '[#S] #I: #W'
+        exit 0
+        ;;
+    "la")
+        tmux list-windows -a -F '[#S] #I: #W' | grep -iE "(RUN|DONE)"
+        exit 0
+        ;;
+    "lr") # list RUN windows
+        tmux list-windows -a -F '[#S] #I: #W' | grep -i "RUN"
+        exit 0
+        ;;
+    "ld")
+        # list DONE windows
+        tmux list-windows -a -F '[#S] #I: #W' | grep -i "DONE"
+        exit 0
+        ;;
+    "ar") # attach to the first or next RUN window
+        found=0
+        mapfile -t windows < <(tmux list-windows -a -F '#S;#I;#W')
+
+        for line in "${windows[@]}"; do
+            IFS=';' read -r session window name <<< "$line"
+            if [[ $name =~ "RUN" ]]; then
+                if [[ -z $TMUX ]]; then
+                    found=1
+                    echo "Attaching to $session:$window $name"
+                    tmux attach -t "$session:$window"
+                    break
+                else
+                    current_session=$(tmux display-message -p '#S')
+                    current_window=$(tmux display-message -p '#I')
+                    if [[ $session == "$current_session" && $window == "$current_window" ]]; then
+                        continue
+                    fi
+                    found=1
+                    echo "Switching to $session:$window $name"
+                    tmux switch-client -t "$session:$window"
+                    break
+                fi
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            echo "No RUN window found"
+        fi
+        exit 0
+        ;;
+    "ad") # attach to the first or next DONE window
+        found=0
+        mapfile -t windows < <(tmux list-windows -a -F '#S;#I;#W')
+
+        for line in "${windows[@]}"; do
+            IFS=';' read -r session window name <<< "$line"
+            if [[ $name =~ "DONE" ]]; then
+                if [[ -z $TMUX ]]; then
+                    found=1
+                    echo "Attaching to $session:$window $name"
+                    tmux attach -t "$session:$window"
+                    break
+                else
+                    current_session=$(tmux display-message -p '#S')
+                    current_window=$(tmux display-message -p '#I')
+                    if [[ $session == "$current_session" && $window == "$current_window" ]]; then
+                        continue
+                    fi
+                    found=1
+                    echo "Switching to $session:$window $name"
+                    tmux switch-client -t "$session:$window"
+                    break
+                fi
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            echo "No DONE window found"
+        fi
+        exit 0
+        ;;
+    "xd") # close DONE windows
+        window_fulls=$(tmux list-windows -a -F '#S;#I;#W' | grep -i "DONE")
+        if [[ -z $window_fulls ]]; then
+            echo "No DONE window found"
+            exit 0
+        fi
+        IFS=$'\n'
+        for window_full in $window_fulls; do
+            session=$(echo $window_full | cut -d';' -f1)
+            window=$(echo $window_full | cut -d';' -f2)
+            name=$(echo $window_full | cut -d';' -f3)
+            if [[ $2 != "-y" ]]; then
+                read -p "Close [$session] $window:$name? [y/N] " -r
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    continue
+                fi
+            else
+                echo "Closing [$session] $window:$name"
+            fi
+            tmux kill-window -t $session:$window
+        done
+        exit 0
+        ;;
+    "-h" | "--help")
+        help
+        exit 0
+    ;;
+esac
