@@ -1,0 +1,60 @@
+#!/bin/bash
+print_help() {
+    echo "Usage: $0 [-m] [path]"
+    echo
+    echo "Options:"
+    echo "  -m        Also update MODIFICATION (default ACCESS only)"
+    echo
+    echo "Arguments:"
+    echo "  path      Path to update timestamps (default: current dir)"
+    exit 1
+}
+
+# 1. Default to ACCESS time (-a) and NO CREATE (-c)
+TOUCH_FLAGS="-ac"
+MODE_DESC="ACCESS time (atime)"
+
+# 2. Parse options
+while getopts ":mh" opt; do
+  case ${opt} in
+    m)
+      TOUCH_FLAGS="-amc" # Update both ACCESS and MODIFICATION times
+      MODE_DESC="MODIFICATION and ACCESS time (mtime and atime)"
+      ;;
+    h)
+      print_help
+      exit 0
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      print_help
+      exit 1
+      ;;
+  esac
+done
+
+# Shift arguments so $1 becomes the path, ignoring the flags
+shift $((OPTIND -1))
+
+# 3. Set the target path (default to current dir if not provided)
+TARGET="${1:-.}"
+
+# 4. Check existence
+if [ ! -e "$TARGET" ]; then
+    echo "Error: Path '$TARGET' does not exist."
+    exit 1
+fi
+
+echo "Mode: Updating $MODE_DESC"
+echo "Target: $TARGET"
+
+# 5. Execute Touch
+if [ -f "$TARGET" ]; then
+    touch $TOUCH_FLAGS "$TARGET"
+elif [ -d "$TARGET" ]; then
+    find "$TARGET" -type f -exec touch $TOUCH_FLAGS {} +
+else
+    echo "Skipping: Not a regular file or directory."
+fi
+
+echo "Done."
