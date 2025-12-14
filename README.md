@@ -2,7 +2,19 @@
 
 This repository contains my **personal** configurations and setup scripts for high-performance computing (HPC) environments.
 
-Apps:
+## Run
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Justype/personal_hpc_setup/main/setup.sh | bash
+```
+
+## Apps
+
+- bat
+- zoxide
+- rclone
+
+## Configs
 
 - Neovim + Node.js + CoC
 - Tmux
