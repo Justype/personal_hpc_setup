@@ -1,0 +1,39 @@
+name: Update home metadata
+
+on:
+  push:
+    paths:
+      - 'home/**'
+  pull_request:
+    paths:
+      - 'home/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-home:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Generate list of files under home/
+        run: |
+          mkdir -p metadata
+          find home -type f | sed 's|^./||' | sort -u > metadata/home.txt || true
+
+      - name: Commit metadata/home.txt if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- metadata/home.txt; then
+            git add metadata/home.txt
+            git commit -m "chore: update metadata/home.txt"
+            git push
+          else
+            echo "No changes to metadata/home.txt"
+          fi
