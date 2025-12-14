@@ -1,0 +1,6 @@
+home/bin/t
+home/bin/touch-all
+home/.config/nvim/coc-settings.json
+home/.config/nvim/init.vim
+home/.tmux.conf
+home/.vimrc
