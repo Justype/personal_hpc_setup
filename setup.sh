@@ -5,7 +5,7 @@ set -eu
 GIT_REPO="Justype/personal_hpc_setup"
 GIT_URL_BASE="https://raw.githubusercontent.com/$GIT_REPO/main"
 HOME_TXT_URL="$GIT_URL_BASE/metadata/home.txt"
-HOME=test_home  # DEBUG: set to test directory
+# HOME=test_home  # DEBUG: set to test directory
 
 DRY_RUN=0
 
