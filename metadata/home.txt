@@ -5,3 +5,4 @@ home/.tmux.conf
 home/.vimrc
 home/bin/t
 home/bin/touch-all
+home/bin/vi
