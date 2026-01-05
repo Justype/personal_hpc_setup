@@ -13,6 +13,8 @@ curl -fsSL https://raw.githubusercontent.com/Justype/personal_hpc_setup/main/set
 - bat
 - zoxide
 - rclone
+- yazi
+- fzf
 
 ## Configs
 

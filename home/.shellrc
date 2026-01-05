@@ -3,6 +3,11 @@ if ! [[ "$PATH" =~ "$HOME/bin" ]]; then
     export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 fi
 
+# ENV variables
+export EDITOR=vi
+export VISUAL="$EDITOR"
+export PAGER=less
+
 # Aliases
 alias ls='ls --color=auto'
 alias ll='ls -lFh'
@@ -13,10 +18,19 @@ alias grep='grep --color=auto'
 alias fgrep='fgrep --color=auto'
 alias egrep='egrep --color=auto'
 
-
 # Zoxide setup
 if command -v zoxide &> /dev/null; then
     eval "$(zoxide init $(basename $SHELL))"
+fi
+# Yazi setup
+if command -v yazi &> /dev/null; then
+    function y() {
+        local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+        command yazi "$@" --cwd-file="$tmp"
+        IFS= read -r -d '' cwd < "$tmp"
+        [ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
+        rm -f -- "$tmp"
+    }
 fi
 
 ## Colors

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if command -v nvim &> /dev/null; then
+    nvim "$@"
+    exit
+fi
+
+if command -v condatainer &> /dev/null; then
+    if ! condatainer ls nvim | grep -q 'nvim'; then
+        echo creating condatainer 'nvim'...
+        condatainer create -n nvim nvim nodejs
+    fi
+    condatainer exec -o nvim nvim "$@"
+    if [ $? -ne 0 ]; then
+        /bin/vim "$@"
+    fi
+else
+    /bin/vim "$@"
+fi

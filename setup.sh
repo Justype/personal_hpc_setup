@@ -147,4 +147,46 @@ if ! command -v rclone &> /dev/null; then
         echo "[Dry Run] Would download and install rclone to $HOME/bin"
     fi
 fi
+
+if ! command -v fzf &> /dev/null; then
+    if [[ $DRY_RUN -eq 0 ]]; then
+        echo "Installing fzf..."
+        if uname -m | grep -q 'x86_64'; then
+            ARCH='amd64'
+        elif uname -m | grep -q 'aarch64'; then
+            ARCH='arm64'
+        fi
+        if [[ -n "$ARCH" ]]; then
+            FZF_URL="https://github.com/junegunn/fzf/releases/download/v0.67.0/fzf-0.67.0-linux_$ARCH.tar.gz"
+            FZF_TAR="$HOME/fzf.tar.gz"
+            echo "Downloading fzf from $FZF_URL"
+            curl -L "$FZF_URL" -o "$FZF_TAR"
+            tar -xzf "$FZF_TAR" -C "$HOME/bin" fzf
+            rm "$FZF_TAR"
+        else
+            echo "Unsupported architecture for fzf installation."
+        fi
+    else
+        echo "[Dry Run] Would download and install fzf to $HOME/bin"
+    fi
+fi
+
+if ! command -v yazi &> /dev/null; then
+    if [[ $DRY_RUN -eq 0 ]]; then
+        echo "Installing yazi..."
+        YAZI_URL="https://github.com/sxyazi/yazi/releases/latest/download/yazi-$(uname -m)-unknown-linux-musl.zip"
+        YAZI_ZIP="$HOME/yazi.zip"
+        echo "Downloading yazi from $YAZI_URL"
+        curl -L "$YAZI_URL" -o "$YAZI_ZIP"
+        folder_name=$(unzip -l "$YAZI_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
+        unzip -o "$YAZI_ZIP" -d "$HOME"
+        mv "$HOME/$folder_name/yazi" "$HOME/bin/yazi"
+        mv "$HOME/$folder_name/yz" "$HOME/bin/yz"
+        rm -r "$HOME/$folder_name"
+        rm "$YAZI_ZIP"
+    else
+        echo "[Dry Run] Would download and install yazi to $HOME/bin"
+    fi
+fi
+
 # endregion
