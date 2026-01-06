@@ -181,7 +181,7 @@ if ! command -v yazi &> /dev/null; then
         folder_name=$(unzip -l "$YAZI_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
         unzip -o "$YAZI_ZIP" -d "$HOME"
         mv "$HOME/$folder_name/yazi" "$HOME/bin/yazi"
-        mv "$HOME/$folder_name/yz" "$HOME/bin/yz"
+        mv "$HOME/$folder_name/ya" "$HOME/bin/ya"
         rm -r "$HOME/$folder_name"
         rm "$YAZI_ZIP"
     else
