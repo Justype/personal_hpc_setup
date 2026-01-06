@@ -1,0 +1,164 @@
+#!/bin/bash
+# This script helps run code-server with CondaTainer.
+
+NCPUS=4
+MEM=16G
+TIME=12:00:00
+PORT=8080
+AUTH="none"
+LOG_DIR="$HOME/condatainer_logs"
+OVERLAY="env.img"
+
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+if [ ! -d "$LOG_DIR" ]; then
+    mkdir -p "$LOG_DIR"
+fi
+
+if [ -f "$LOG_DIR/.code-server" ]; then
+    read -r PRE_JOB_ID PRE_PORT PRE_AUTH PRE_NODE < "$LOG_DIR/.code-server"
+    PRE_JOB_STATUS=$(squeue -j $PRE_JOB_ID -h -o "%T" 2>/dev/null)
+    if [ "$PRE_JOB_STATUS" != "RUNNING" ]; then
+        echo -e "The previous code-server job (ID: ${YELLOW}$PRE_JOB_ID${NC}) is no longer running."
+        rm "$LOG_DIR/.code-server"
+    elif [ "$PRE_JOB_STATUS" == "PENDING" ]; then
+        echo -e "The previous code-server job (ID: ${YELLOW}$PRE_JOB_ID${NC}) is still pending. Please wait until it starts running."
+        exit 0
+    else
+        echo -e "Found an existing code-server job (ID: ${YELLOW}$PRE_JOB_ID${NC}) running on node ${BLUE}$PRE_NODE${NC}."
+        echo -e "You can access code-server at ${BLUE}http://localhost:$PRE_PORT${NC}"
+        echo -e "If you want to stop it, run: ${YELLOW}scancel $PRE_JOB_ID${NC}"
+        echo -e "If you want to go back to login node, press Ctrl+D or type 'exit' after connecting."
+        ssh -L $PRE_PORT:localhost:$PRE_PORT $USER@$PRE_NODE
+        exit 0
+    fi
+fi
+
+print_help() {
+    echo "Usage: $0 [options]"
+    echo ""
+    echo "Options:"
+    echo "  -c <number>     Number of CPUs to allocate (default: $NCPUS)"
+    echo "  -m <memory>     Amount of memory to allocate (default: $MEM)"
+    echo "  -t <time>       Time limit for the job (default: $TIME)"
+    echo "  -o <overlay>    Overlay image to use (default: $OVERLAY)"
+    echo "  -p <port>       Port for code-server (default: $PORT)"
+    echo "  -a <auth>       Password for code-server authentication (default: none)"
+    echo "  -y              Accept all warnings and proceed"
+    echo "  -h              Show this help message"
+}
+
+while getopts "c:m:t:p:a:yh" opt; do
+    case ${opt} in
+        c ) NCPUS=$OPTARG ;;
+        m ) MEM=$OPTARG ;;
+        t ) TIME=$OPTARG ;;
+        p ) PORT=$OPTARG ;;
+        a ) AUTH=$OPTARG ;;
+        y ) AUTO_YES=true ;;
+        h ) print_help; exit 0 ;;
+        \? ) print_help; exit 1 ;;
+    esac
+done
+
+#region Sanity Checks
+if ! command -v condatainer &> /dev/null; then
+    echo -e "${RED}[ERROR]${NC} CondaTainer is not installed or not in PATH."
+    echo -e "Please go to https://github.com/Justype/condatainer to install CondaTainer."
+    exit 1
+fi
+
+missing=""
+for pkg in code-server; do
+    if ! condatainer ls $pkg | grep -q $pkg; then
+        missing+=" $pkg"
+    fi
+done
+if [ -n "$missing" ]; then
+    echo -e "${RED}[ERROR]${NC} The following required overlays are missing:${missing}."
+    echo -e "Please run 'condatainer install $missing'"
+    exit 1
+fi
+
+if [ ! -f "$OVERLAY" ]; then
+    echo -e "${YELLOW}[WARNING]${NC} Overlay ${BLUE}$OVERLAY${NC} not found."
+    OVERLAY_ARG=""
+    if [ "$AUTO_YES" != true ]; then
+        read -p "Do you want to proceed without an overlay? [y/N]: " choice
+        case "$choice" in
+            y|Y ) ;;
+            * ) exit 0 ;;
+        esac
+    fi
+else
+    echo "Using overlay: $OVERLAY"
+    OVERLAY_ARG="--overlay $OVERLAY"
+
+    # Check and repair overlay image
+    e2fsck -p $OVERLAY > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR]${NC} Overlay ${BLUE}$OVERLAY${NC} is corrupted and could not be repaired."
+        exit 1
+    fi
+fi
+#endregion
+
+mkdir -p $LOG_DIR
+
+DATE=$(date +"%Y%m%d_%H%M%S")
+
+if [ "$AUTH" != "none" ]; then
+    AUTH_OPTION="--auth password --password $AUTH"
+else
+    AUTH_OPTION="--auth none"
+fi
+
+SBATCH_SCRIPT_PATH="$LOG_DIR/${DATE}-code-server.sbatch"
+
+cat <<EOT > $SBATCH_SCRIPT_PATH
+#!/bin/bash
+#SBATCH --job-name=code-server
+#SBATCH --cpus-per-task=$NCPUS
+#SBATCH --mem=$MEM
+#SBATCH --time=$TIME
+#SBATCH --output=$LOG_DIR/${DATE}-code-server-%j.log
+
+printf "\$SLURM_JOB_ID\t$PORT\t$AUTH\t\$(hostname)\n" > $LOG_DIR/.code-server
+condatainer exec \\
+    -o code-server \\
+    $OVERLAY_ARG --writable-img \\
+    code-server \\
+        $AUTH_OPTION \\
+        --bind-addr 127.0.0.1:$PORT
+rm $LOG_DIR/.code-server
+EOT
+
+SBATCH_OUTPUT=$(sbatch $SBATCH_SCRIPT_PATH)
+SBATCH_JOB_ID=$(echo $SBATCH_OUTPUT | awk '{print $4}')
+
+NODE="$HOSTNAME"
+
+while true; do
+    CURRENT_STATUS=$(squeue -j $SBATCH_JOB_ID -h -o "%T" 2>/dev/null)
+    if [ "$CURRENT_STATUS" == "RUNNING" ]; then
+        break
+    fi
+    if [ "$CURRENT_STATUS" == "" ]; then
+        echo -e "${RED}[ERROR]${NC} Job $SBATCH_JOB_ID not found in the queue. Please check the SLURM log $LOG_DIR/${DATE}-code-server-$SBATCH_JOB_ID.log for details."
+        exit 1
+    fi
+    printf "\rWaiting for job %s to start running. Current status: %s." "$SBATCH_JOB_ID" "$CURRENT_STATUS"
+    sleep 10
+done
+
+sleep 2  # Give some time for slurm initialization
+NODE=$(squeue -j $SBATCH_JOB_ID -h -o "%N")
+echo ""
+echo -e "Job ${YELLOW}$SBATCH_JOB_ID${NC} is now running on node ${BLUE}$NODE${NC}."
+echo -e "You can access code-server at ${BLUE}http://localhost:$PORT${NC}"
+echo -e "If you want to stop it, run: ${YELLOW}scancel $SBATCH_JOB_ID${NC}"
+echo -e "If you want to go back to login node, press Ctrl+D or type 'exit' after connecting."
+ssh -L $PORT:localhost:$PORT $USER@$NODE
