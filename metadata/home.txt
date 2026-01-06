@@ -3,6 +3,7 @@ home/.config/nvim/init.vim
 home/.shellrc
 home/.tmux.conf
 home/.vimrc
+home/bin/myjobs
 home/bin/t
 home/bin/touch-all
 home/bin/vi
