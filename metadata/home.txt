@@ -3,7 +3,9 @@ home/.config/nvim/init.vim
 home/.shellrc
 home/.tmux.conf
 home/.vimrc
+home/bin/code-server-helper
 home/bin/myjobs
+home/bin/rstudio-server-helper
 home/bin/t
 home/bin/touch-all
 home/bin/vi
