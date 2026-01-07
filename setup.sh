@@ -87,6 +87,11 @@ fi
 # endregion
 
 # region Tools
+get_latest_release() {
+    local repo="$1"
+    curl -s "https://api.github.com/repos/$repo/releases/latest" | jq -r .tag_name
+}
+
 if ! [[ -f $HOME/.local/share/nvim/site/autoload/plug.vim ]]; then
     if [[ $DRY_RUN -eq 0 ]]; then
         echo "Installing vim-plug for Neovim..."
@@ -97,9 +102,10 @@ if ! [[ -f $HOME/.local/share/nvim/site/autoload/plug.vim ]]; then
     fi
 fi
 
-if ! command -v bat &> /dev/null; then
+if ! [ -f "$HOME/bin/bat" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
-        BAT_URL="https://github.com/sharkdp/bat/releases/download/v0.26.0/bat-v0.26.0-$(uname -m)-unknown-linux-musl.tar.gz"
+        BAT_VERSION=$(get_latest_release "sharkdp/bat")
+        BAT_URL="https://github.com/sharkdp/bat/releases/download/$BAT_VERSION/bat-$BAT_VERSION-$(uname -m)-unknown-linux-musl.tar.gz"
         BAT_TAR="$HOME/bat.tar.gz"
         echo "Downloading bat from $BAT_URL"
         curl -L "$BAT_URL" -o "$BAT_TAR"
@@ -110,9 +116,10 @@ if ! command -v bat &> /dev/null; then
     fi
 fi
 
-if ! command -v zoxide &> /dev/null; then
+if ! [ -f "$HOME/bin/zoxide" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
-        ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/v0.9.8/zoxide-0.9.8-$(uname -m)-unknown-linux-musl.tar.gz"
+        ZOXIDE_VERSION=$(get_latest_release "ajeetdsouza/zoxide")
+        ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/$ZOXIDE_VERSION/zoxide-$ZOXIDE_VERSION-$(uname -m)-unknown-linux-musl.tar.gz"
         ZOXIDE_TAR="$HOME/zoxide.tar.gz"
         echo "Downloading zoxide from $ZOXIDE_URL"
         curl -L "$ZOXIDE_URL" -o "$ZOXIDE_TAR"
@@ -123,7 +130,7 @@ if ! command -v zoxide &> /dev/null; then
     fi
 fi
 
-if ! command -v rclone &> /dev/null; then
+if ! [ -f "$HOME/bin/rclone" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         if uname -m | grep -q 'x86_64'; then
             ARCH='amd64'
@@ -148,7 +155,7 @@ if ! command -v rclone &> /dev/null; then
     fi
 fi
 
-if ! command -v fzf &> /dev/null; then
+if ! [ -f "$HOME/bin/fzf" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         echo "Installing fzf..."
         if uname -m | grep -q 'x86_64'; then
@@ -157,7 +164,8 @@ if ! command -v fzf &> /dev/null; then
             ARCH='arm64'
         fi
         if [[ -n "$ARCH" ]]; then
-            FZF_URL="https://github.com/junegunn/fzf/releases/download/v0.67.0/fzf-0.67.0-linux_$ARCH.tar.gz"
+            FZF_VERSION=$(get_latest_release "junegunn/fzf")
+            FZF_URL="https://github.com/junegunn/fzf/releases/download/$FZF_VERSION/fzf-$FZF_VERSION-linux_$ARCH.tar.gz"
             FZF_TAR="$HOME/fzf.tar.gz"
             echo "Downloading fzf from $FZF_URL"
             curl -L "$FZF_URL" -o "$FZF_TAR"
@@ -171,10 +179,11 @@ if ! command -v fzf &> /dev/null; then
     fi
 fi
 
-if ! command -v yazi &> /dev/null; then
+if ! [ -f "$HOME/bin/yazi" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         echo "Installing yazi..."
-        YAZI_URL="https://github.com/sxyazi/yazi/releases/latest/download/yazi-$(uname -m)-unknown-linux-musl.zip"
+        YAZI_VERSION=$(get_latest_release "sxyazi/yazi")
+        YAZI_URL="https://github.com/sxyazi/yazi/releases/download/$YAZI_VERSION/yazi-$(uname -m)-unknown-linux-musl.zip"
         YAZI_ZIP="$HOME/yazi.zip"
         echo "Downloading yazi from $YAZI_URL"
         curl -L "$YAZI_URL" -o "$YAZI_ZIP"
