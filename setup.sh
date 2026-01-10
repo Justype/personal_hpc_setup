@@ -102,35 +102,35 @@ if ! [[ -f $HOME/.local/share/nvim/site/autoload/plug.vim ]]; then
     fi
 fi
 
-if ! [ -f "$HOME/bin/bat" ] &> /dev/null; then
+if ! [ -f "$HOME/.local/bin/bat" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         BAT_VERSION=$(get_latest_release "sharkdp/bat")
         BAT_URL="https://github.com/sharkdp/bat/releases/download/$BAT_VERSION/bat-$BAT_VERSION-$(uname -m)-unknown-linux-musl.tar.gz"
         BAT_TAR="$HOME/bat.tar.gz"
         echo "Downloading bat from $BAT_URL"
         curl -L "$BAT_URL" -o "$BAT_TAR"
-        tar -xzf "$BAT_TAR" -C "$HOME/bin" --strip-components=1 --wildcards "bat*/bat"
+        tar -xzf "$BAT_TAR" -C "$HOME/.local/bin" --strip-components=1 --wildcards "bat*/bat"
         rm "$BAT_TAR"
     else
-        echo "[Dry Run] Would download and install bat to $HOME/bin"
+        echo "[Dry Run] Would download and install bat to $HOME/.local/bin"
     fi
 fi
 
-if ! [ -f "$HOME/bin/zoxide" ] &> /dev/null; then
+if ! [ -f "$HOME/.local/bin/zoxide" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         ZOXIDE_VERSION=$(get_latest_release "ajeetdsouza/zoxide")
         ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/$ZOXIDE_VERSION/zoxide-$ZOXIDE_VERSION-$(uname -m)-unknown-linux-musl.tar.gz"
         ZOXIDE_TAR="$HOME/zoxide.tar.gz"
         echo "Downloading zoxide from $ZOXIDE_URL"
         curl -L "$ZOXIDE_URL" -o "$ZOXIDE_TAR"
-        tar -xzf "$ZOXIDE_TAR" -C "$HOME/bin" zoxide
+        tar -xzf "$ZOXIDE_TAR" -C "$HOME/.local/bin" zoxide
         rm "$ZOXIDE_TAR"
     else
-        echo "[Dry Run] Would download and install zoxide to $HOME/bin"
+        echo "[Dry Run] Would download and install zoxide to $HOME/.local/bin"
     fi
 fi
 
-if ! [ -f "$HOME/bin/rclone" ] &> /dev/null; then
+if ! [ -f "$HOME/.local/bin/rclone" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         if uname -m | grep -q 'x86_64'; then
             ARCH='amd64'
@@ -144,18 +144,18 @@ if ! [ -f "$HOME/bin/rclone" ] &> /dev/null; then
             curl -L "$RCLONE_URL" -o "$RCLONE_ZIP"
             folder_name=$(unzip -l "$RCLONE_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
             unzip -o "$RCLONE_ZIP" -d "$HOME"
-            mv "$HOME/$folder_name/rclone" "$HOME/bin/rclone"
+            mv "$HOME/$folder_name/rclone" "$HOME/.local/bin/rclone"
             rm -r "$HOME/$folder_name"
             rm "$RCLONE_ZIP"
         else
             echo "Unsupported architecture for rclone installation."
         fi
     else
-        echo "[Dry Run] Would download and install rclone to $HOME/bin"
+        echo "[Dry Run] Would download and install rclone to $HOME/.local/bin"
     fi
 fi
 
-if ! [ -f "$HOME/bin/fzf" ] &> /dev/null; then
+if ! [ -f "$HOME/.local/bin/fzf" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         echo "Installing fzf..."
         if uname -m | grep -q 'x86_64'; then
@@ -169,17 +169,17 @@ if ! [ -f "$HOME/bin/fzf" ] &> /dev/null; then
             FZF_TAR="$HOME/fzf.tar.gz"
             echo "Downloading fzf from $FZF_URL"
             curl -L "$FZF_URL" -o "$FZF_TAR"
-            tar -xzf "$FZF_TAR" -C "$HOME/bin" fzf
+            tar -xzf "$FZF_TAR" -C "$HOME/.local/bin" fzf
             rm "$FZF_TAR"
         else
             echo "Unsupported architecture for fzf installation."
         fi
     else
-        echo "[Dry Run] Would download and install fzf to $HOME/bin"
+        echo "[Dry Run] Would download and install fzf to $HOME/.local/bin"
     fi
 fi
 
-if ! [ -f "$HOME/bin/yazi" ] &> /dev/null; then
+if ! [ -f "$HOME/.local/bin/yazi" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         echo "Installing yazi..."
         YAZI_VERSION=$(get_latest_release "sxyazi/yazi")
@@ -189,12 +189,12 @@ if ! [ -f "$HOME/bin/yazi" ] &> /dev/null; then
         curl -L "$YAZI_URL" -o "$YAZI_ZIP"
         folder_name=$(unzip -l "$YAZI_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
         unzip -o "$YAZI_ZIP" -d "$HOME"
-        mv "$HOME/$folder_name/yazi" "$HOME/bin/yazi"
-        mv "$HOME/$folder_name/ya" "$HOME/bin/ya"
+        mv "$HOME/$folder_name/yazi" "$HOME/.local/bin/yazi"
+        mv "$HOME/$folder_name/ya" "$HOME/.local/bin/ya"
         rm -r "$HOME/$folder_name"
         rm "$YAZI_ZIP"
     else
-        echo "[Dry Run] Would download and install yazi to $HOME/bin"
+        echo "[Dry Run] Would download and install yazi to $HOME/.local/bin"
     fi
 fi
 

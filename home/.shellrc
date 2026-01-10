@@ -1,6 +1,6 @@
 # Personal shell configuration
-if ! [[ "$PATH" =~ "$HOME/bin" ]]; then
-    export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
+if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
+    export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 fi
 
 # ENV variables
