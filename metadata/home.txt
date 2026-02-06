@@ -9,3 +9,4 @@ home/bin/rstudio-server-helper
 home/bin/t
 home/bin/touch-all
 home/bin/vi
+home/resources/r/base16-solarized-light.rstheme
