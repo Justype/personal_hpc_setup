@@ -20,3 +20,9 @@ curl -fsSL https://raw.githubusercontent.com/Justype/personal_hpc_setup/main/set
 
 - Neovim + Node.js + CoC
 - Tmux
+
+## Resources
+
+### R
+
+- [RStudio Theme - Solarized Light](https://raw.githubusercontent.com/gadenbuie/rsthemes/main/inst/themes/base16/base16-solarized-light.rstheme) ([repo](https://github.com/gadenbuie/rsthemes))

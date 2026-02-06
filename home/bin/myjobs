@@ -7,4 +7,7 @@
 # M: time used
 # t: job state
 # N: node list
-squeue -u $USER -o "%.15i %.15j %.4C %.5m %.9M %.2t %N"
+# b: GRES
+if command -v squeue &> /dev/null; then
+    squeue -u $USER -o "%.15i %.15j %.4C %.5m %.9M %.2t %.8N %b"
+fi

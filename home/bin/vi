@@ -6,7 +6,7 @@ if command -v nvim &> /dev/null; then
 fi
 
 if command -v condatainer &> /dev/null; then
-    if ! condatainer ls nvim | grep -q 'nvim'; then
+    if ! condatainer ls -e nvim > /dev/null; then
         echo creating condatainer 'nvim'...
         condatainer create -n nvim nvim nodejs
     fi
