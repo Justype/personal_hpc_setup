@@ -89,7 +89,8 @@ fi
 # region Tools
 get_latest_release() {
     local repo="$1"
-    curl -s "https://api.github.com/repos/$repo/releases/latest" | jq -r .tag_name
+    local tag=$(curl -s "https://api.github.com/repos/$repo/releases/latest" | jq -r .tag_name)
+    echo "${tag#v}" # remove leading 'v' if present
 }
 
 if ! [[ -f $HOME/.local/share/nvim/site/autoload/plug.vim ]]; then
@@ -105,7 +106,7 @@ fi
 if ! [ -f "$HOME/.local/bin/bat" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         BAT_VERSION=$(get_latest_release "sharkdp/bat")
-        BAT_URL="https://github.com/sharkdp/bat/releases/download/$BAT_VERSION/bat-$BAT_VERSION-$(uname -m)-unknown-linux-musl.tar.gz"
+        BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/bat-${BAT_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz"
         BAT_TAR="$HOME/bat.tar.gz"
         echo "Downloading bat from $BAT_URL"
         curl -L "$BAT_URL" -o "$BAT_TAR"
@@ -119,7 +120,7 @@ fi
 if ! [ -f "$HOME/.local/bin/zoxide" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         ZOXIDE_VERSION=$(get_latest_release "ajeetdsouza/zoxide")
-        ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/$ZOXIDE_VERSION/zoxide-$ZOXIDE_VERSION-$(uname -m)-unknown-linux-musl.tar.gz"
+        ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz"
         ZOXIDE_TAR="$HOME/zoxide.tar.gz"
         echo "Downloading zoxide from $ZOXIDE_URL"
         curl -L "$ZOXIDE_URL" -o "$ZOXIDE_TAR"
@@ -165,7 +166,7 @@ if ! [ -f "$HOME/.local/bin/fzf" ] &> /dev/null; then
         fi
         if [[ -n "$ARCH" ]]; then
             FZF_VERSION=$(get_latest_release "junegunn/fzf")
-            FZF_URL="https://github.com/junegunn/fzf/releases/download/$FZF_VERSION/fzf-$FZF_VERSION-linux_$ARCH.tar.gz"
+            FZF_URL="https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz"
             FZF_TAR="$HOME/fzf.tar.gz"
             echo "Downloading fzf from $FZF_URL"
             curl -L "$FZF_URL" -o "$FZF_TAR"
@@ -183,7 +184,7 @@ if ! [ -f "$HOME/.local/bin/yazi" ] &> /dev/null; then
     if [[ $DRY_RUN -eq 0 ]]; then
         echo "Installing yazi..."
         YAZI_VERSION=$(get_latest_release "sxyazi/yazi")
-        YAZI_URL="https://github.com/sxyazi/yazi/releases/download/$YAZI_VERSION/yazi-$(uname -m)-unknown-linux-musl.zip"
+        YAZI_URL="https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-$(uname -m)-unknown-linux-musl.zip"
         YAZI_ZIP="$HOME/yazi.zip"
         echo "Downloading yazi from $YAZI_URL"
         curl -L "$YAZI_URL" -o "$YAZI_ZIP"
@@ -195,6 +196,30 @@ if ! [ -f "$HOME/.local/bin/yazi" ] &> /dev/null; then
         rm "$YAZI_ZIP"
     else
         echo "[Dry Run] Would download and install yazi to $HOME/.local/bin"
+    fi
+fi
+
+if ! [ -f "$HOME/.local/bin/gh" ] &> /dev/null; then
+    if [[ $DRY_RUN -eq 0 ]]; then
+        if uname -m | grep -q 'x86_64'; then
+            ARCH='amd64'
+        elif uname -m | grep -q 'aarch64'; then
+            ARCH='arm64'
+        fi
+        if [[ -n "$ARCH" ]]; then
+            echo "Installing GitHub CLI..."
+            GH_VERSION=$(get_latest_release "cli/cli")
+            GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz"
+            GH_TAR="$HOME/gh.tar.gz"
+            echo "Downloading GitHub CLI from $GH_URL"
+            curl -L "$GH_URL" -o "$GH_TAR"
+            tar -xzf "$GH_TAR" -C "$HOME/.local" --strip-components=1 --wildcards "gh_${GH_VERSION}_linux_${ARCH}/bin/gh"
+            rm "$GH_TAR"
+        else
+            echo "Unsupported architecture for GitHub CLI installation."
+        fi
+    else
+        echo "[Dry Run] Would download and install GitHub CLI to $HOME/.local/bin"
     fi
 fi
 
