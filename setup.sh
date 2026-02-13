@@ -103,124 +103,121 @@ if ! [[ -f $HOME/.local/share/nvim/site/autoload/plug.vim ]]; then
     fi
 fi
 
-if ! [ -f "$HOME/.local/bin/bat" ] &> /dev/null; then
-    if [[ $DRY_RUN -eq 0 ]]; then
-        BAT_VERSION=$(get_latest_release "sharkdp/bat")
-        BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/bat-${BAT_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz"
-        BAT_TAR="$HOME/bat.tar.gz"
-        echo "Downloading bat from $BAT_URL"
-        curl -L "$BAT_URL" -o "$BAT_TAR"
-        tar -xzf "$BAT_TAR" -C "$HOME/.local/bin" --strip-components=1 --wildcards "bat*/bat"
-        rm "$BAT_TAR"
-    else
-        echo "[Dry Run] Would download and install bat to $HOME/.local/bin"
-    fi
+# Install or update bat
+if [[ $DRY_RUN -eq 0 ]]; then
+    echo "Installing or updating bat to $HOME/.local/bin"
+    BAT_VERSION=$(get_latest_release "sharkdp/bat")
+    BAT_URL="https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/bat-v${BAT_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz"
+    BAT_TAR="$HOME/bat.tar.gz"
+    echo "Downloading bat from $BAT_URL"
+    curl -L "$BAT_URL" -o "$BAT_TAR"
+    tar -xzf "$BAT_TAR" -C "$HOME/.local/bin" --strip-components=1 --wildcards "bat*/bat"
+    rm "$BAT_TAR"
+else
+    echo "[Dry Run] Would install or update bat to $HOME/.local/bin"
 fi
 
-if ! [ -f "$HOME/.local/bin/zoxide" ] &> /dev/null; then
-    if [[ $DRY_RUN -eq 0 ]]; then
-        ZOXIDE_VERSION=$(get_latest_release "ajeetdsouza/zoxide")
-        ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz"
-        ZOXIDE_TAR="$HOME/zoxide.tar.gz"
-        echo "Downloading zoxide from $ZOXIDE_URL"
-        curl -L "$ZOXIDE_URL" -o "$ZOXIDE_TAR"
-        tar -xzf "$ZOXIDE_TAR" -C "$HOME/.local/bin" zoxide
-        rm "$ZOXIDE_TAR"
-    else
-        echo "[Dry Run] Would download and install zoxide to $HOME/.local/bin"
-    fi
+# Install or update zoxide
+if [[ $DRY_RUN -eq 0 ]]; then
+    echo "Installing or updating zoxide to $HOME/.local/bin"
+    ZOXIDE_VERSION=$(get_latest_release "ajeetdsouza/zoxide")
+    ZOXIDE_URL="https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz"
+    ZOXIDE_TAR="$HOME/zoxide.tar.gz"
+    echo "Downloading zoxide from $ZOXIDE_URL"
+    curl -L "$ZOXIDE_URL" -o "$ZOXIDE_TAR"
+    tar -xzf "$ZOXIDE_TAR" -C "$HOME/.local/bin" zoxide
+    rm "$ZOXIDE_TAR"
+else
+    echo "[Dry Run] Would install or update zoxide to $HOME/.local/bin"
 fi
 
-if ! [ -f "$HOME/.local/bin/rclone" ] &> /dev/null; then
-    if [[ $DRY_RUN -eq 0 ]]; then
-        if uname -m | grep -q 'x86_64'; then
-            ARCH='amd64'
-        elif uname -m | grep -q 'aarch64'; then
-            ARCH='arm64'
-        fi
-        if [[ -n "$ARCH" ]]; then
-            RCLONE_URL="https://downloads.rclone.org/rclone-current-linux-$ARCH.zip"
-            RCLONE_ZIP="$HOME/rclone.zip"
-            echo "Downloading rclone from $RCLONE_URL"
-            curl -L "$RCLONE_URL" -o "$RCLONE_ZIP"
-            folder_name=$(unzip -l "$RCLONE_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
-            unzip -o "$RCLONE_ZIP" -d "$HOME"
-            mv "$HOME/$folder_name/rclone" "$HOME/.local/bin/rclone"
-            rm -r "$HOME/$folder_name"
-            rm "$RCLONE_ZIP"
-        else
-            echo "Unsupported architecture for rclone installation."
-        fi
-    else
-        echo "[Dry Run] Would download and install rclone to $HOME/.local/bin"
+# Install or update rclone
+if [[ $DRY_RUN -eq 0 ]]; then
+    echo "Installing or updating rclone to $HOME/.local/bin"
+    if uname -m | grep -q 'x86_64'; then
+        ARCH='amd64'
+    elif uname -m | grep -q 'aarch64'; then
+        ARCH='arm64'
     fi
-fi
-
-if ! [ -f "$HOME/.local/bin/fzf" ] &> /dev/null; then
-    if [[ $DRY_RUN -eq 0 ]]; then
-        echo "Installing fzf..."
-        if uname -m | grep -q 'x86_64'; then
-            ARCH='amd64'
-        elif uname -m | grep -q 'aarch64'; then
-            ARCH='arm64'
-        fi
-        if [[ -n "$ARCH" ]]; then
-            FZF_VERSION=$(get_latest_release "junegunn/fzf")
-            FZF_URL="https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz"
-            FZF_TAR="$HOME/fzf.tar.gz"
-            echo "Downloading fzf from $FZF_URL"
-            curl -L "$FZF_URL" -o "$FZF_TAR"
-            tar -xzf "$FZF_TAR" -C "$HOME/.local/bin" fzf
-            rm "$FZF_TAR"
-        else
-            echo "Unsupported architecture for fzf installation."
-        fi
-    else
-        echo "[Dry Run] Would download and install fzf to $HOME/.local/bin"
-    fi
-fi
-
-if ! [ -f "$HOME/.local/bin/yazi" ] &> /dev/null; then
-    if [[ $DRY_RUN -eq 0 ]]; then
-        echo "Installing yazi..."
-        YAZI_VERSION=$(get_latest_release "sxyazi/yazi")
-        YAZI_URL="https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-$(uname -m)-unknown-linux-musl.zip"
-        YAZI_ZIP="$HOME/yazi.zip"
-        echo "Downloading yazi from $YAZI_URL"
-        curl -L "$YAZI_URL" -o "$YAZI_ZIP"
-        folder_name=$(unzip -l "$YAZI_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
-        unzip -o "$YAZI_ZIP" -d "$HOME"
-        mv "$HOME/$folder_name/yazi" "$HOME/.local/bin/yazi"
-        mv "$HOME/$folder_name/ya" "$HOME/.local/bin/ya"
+    if [[ -n "$ARCH" ]]; then
+        RCLONE_URL="https://downloads.rclone.org/rclone-current-linux-$ARCH.zip"
+        RCLONE_ZIP="$HOME/rclone.zip"
+        echo "Downloading rclone from $RCLONE_URL"
+        curl -L "$RCLONE_URL" -o "$RCLONE_ZIP"
+        folder_name=$(unzip -l "$RCLONE_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
+        unzip -o "$RCLONE_ZIP" -d "$HOME"
+        mv "$HOME/$folder_name/rclone" "$HOME/.local/bin/rclone"
         rm -r "$HOME/$folder_name"
-        rm "$YAZI_ZIP"
+        rm "$RCLONE_ZIP"
     else
-        echo "[Dry Run] Would download and install yazi to $HOME/.local/bin"
+        echo "Unsupported architecture for rclone installation."
     fi
+else
+    echo "[Dry Run] Would install or update rclone to $HOME/.local/bin"
 fi
 
-if ! [ -f "$HOME/.local/bin/gh" ] &> /dev/null; then
-    if [[ $DRY_RUN -eq 0 ]]; then
-        if uname -m | grep -q 'x86_64'; then
-            ARCH='amd64'
-        elif uname -m | grep -q 'aarch64'; then
-            ARCH='arm64'
-        fi
-        if [[ -n "$ARCH" ]]; then
-            echo "Installing GitHub CLI..."
-            GH_VERSION=$(get_latest_release "cli/cli")
-            GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz"
-            GH_TAR="$HOME/gh.tar.gz"
-            echo "Downloading GitHub CLI from $GH_URL"
-            curl -L "$GH_URL" -o "$GH_TAR"
-            tar -xzf "$GH_TAR" -C "$HOME/.local" --strip-components=1 --wildcards "gh_${GH_VERSION}_linux_${ARCH}/bin/gh"
-            rm "$GH_TAR"
-        else
-            echo "Unsupported architecture for GitHub CLI installation."
-        fi
-    else
-        echo "[Dry Run] Would download and install GitHub CLI to $HOME/.local/bin"
+# Install or update fzf
+if [[ $DRY_RUN -eq 0 ]]; then
+    echo "Installing or updating fzf to $HOME/.local/bin"
+    if uname -m | grep -q 'x86_64'; then
+        ARCH='amd64'
+    elif uname -m | grep -q 'aarch64'; then
+        ARCH='arm64'
     fi
+    if [[ -n "$ARCH" ]]; then
+        FZF_VERSION=$(get_latest_release "junegunn/fzf")
+        FZF_URL="https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz"
+        FZF_TAR="$HOME/fzf.tar.gz"
+        echo "Downloading fzf from $FZF_URL"
+        curl -L "$FZF_URL" -o "$FZF_TAR"
+        tar -xzf "$FZF_TAR" -C "$HOME/.local/bin" fzf
+        rm "$FZF_TAR"
+    else
+        echo "Unsupported architecture for fzf installation."
+    fi
+else
+    echo "[Dry Run] Would install or update fzf to $HOME/.local/bin"
+fi
+
+# Install or update yazi
+if [[ $DRY_RUN -eq 0 ]]; then
+    echo "Installing or updating yazi to $HOME/.local/bin"
+    YAZI_VERSION=$(get_latest_release "sxyazi/yazi")
+    YAZI_URL="https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-$(uname -m)-unknown-linux-musl.zip"
+    YAZI_ZIP="$HOME/yazi.zip"
+    echo "Downloading yazi from $YAZI_URL"
+    curl -L "$YAZI_URL" -o "$YAZI_ZIP"
+    folder_name=$(unzip -l "$YAZI_ZIP" | head -n 4 | tail -n 1 | awk '{print $4}' | cut -d'/' -f1)
+    unzip -o "$YAZI_ZIP" -d "$HOME"
+    mv "$HOME/$folder_name/yazi" "$HOME/.local/bin/yazi"
+    mv "$HOME/$folder_name/ya" "$HOME/.local/bin/ya"
+    rm -r "$HOME/$folder_name"
+    rm "$YAZI_ZIP"
+else
+    echo "[Dry Run] Would install or update yazi to $HOME/.local/bin"
+fi
+
+# Install or update GitHub CLI
+if [[ $DRY_RUN -eq 0 ]]; then
+    echo "Installing or updating GitHub CLI to $HOME/.local/bin"
+    if uname -m | grep -q 'x86_64'; then
+        ARCH='amd64'
+    elif uname -m | grep -q 'aarch64'; then
+        ARCH='arm64'
+    fi
+    if [[ -n "$ARCH" ]]; then
+        GH_VERSION=$(get_latest_release "cli/cli")
+        GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz"
+        GH_TAR="$HOME/gh.tar.gz"
+        echo "Downloading GitHub CLI from $GH_URL"
+        curl -L "$GH_URL" -o "$GH_TAR"
+        tar -xzf "$GH_TAR" -C "$HOME/.local" --strip-components=1 --wildcards "gh_${GH_VERSION}_linux_${ARCH}/bin/gh"
+        rm "$GH_TAR"
+    else
+        echo "Unsupported architecture for GitHub CLI installation."
+    fi
+else
+    echo "[Dry Run] Would install or update GitHub CLI to $HOME/.local/bin"
 fi
 
 # endregion
