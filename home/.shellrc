@@ -38,7 +38,8 @@ fi
 ## Colors
 # Prompt customization
 if [ -z "$IN_CONDATAINER" ]; then
-    PS1='\[\e[1;35m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '
+    # PS1='\[\e[1;35m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '
+    PS1='\t \[\e[1;35m\]\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '
 fi
 # bat colors
 export BAT_THEME=ansi
