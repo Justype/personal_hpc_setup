@@ -1,13 +1,33 @@
 #!/bin/bash
-# i: job id
-# j: job name
-# u: user name
-# C: number of CPUs
-# m: memory
-# M: time used
-# t: job state
-# N: node list
-# b: GRES
+
+# usage: myjobs [name pattern ANDed together]
+pattern="$*"
+
 if command -v squeue &> /dev/null; then
-    squeue -u $USER -o "%.15i %.15j %.4C %.5m %.9M %.2t %.8N %b"
+    # i: job id
+    # j: job name
+    # u: user name
+    # C: number of CPUs
+    # m: memory
+    # M: time used
+    # t: job state
+    # N: node list
+    # b: GRES (resources, like GPUs)
+    format='%.15i %.15j %.4C %.5m %.9M %.2t %.8N %b'
+    if [ -z "$pattern" ]; then
+        squeue -u "$USER" -o "$format"
+    else
+        squeue -u "$USER" -o "$format" | awk -v pat="$pattern" '
+        BEGIN { n = split(tolower(pat), toks, /[[:space:]]+/) }
+        NR == 1 { print; next }
+        {
+            job = tolower($2)
+            ok = 1
+            for (i = 1; i <= n; i++) {
+                if (toks[i] == "") continue
+                if (index(job, toks[i]) == 0) { ok = 0; break }
+            }
+            if (ok) print
+        }'
+    fi
 fi
