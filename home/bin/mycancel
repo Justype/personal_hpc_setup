@@ -1,0 +1,87 @@
+#!/bin/bash
+# usage: mycancel JOBID|PATTERN
+
+pattern="$*"
+
+# helper: show usage
+usage() {
+    cat <<'USAGE' >&2
+usage: mycancel [-h|--help] JOBID|PATTERN
+
+JOBID: directly to scancel (all args must be numeric)
+PATTERN: case-insensitive, space-ANDed pattern matched against job names.
+USAGE
+}
+
+# require scancel and squeue
+if ! command -v scancel &>/dev/null; then
+    echo "scancel: command not found" >&2
+    exit 1
+fi
+if ! command -v squeue &>/dev/null; then
+    echo "squeue: command not found" >&2
+    exit 1
+fi
+
+if [ "$#" -eq 0 ]; then
+    usage
+    exit 2
+fi
+
+# show help if requested (-h/--help)
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help) usage; exit 0 ;;
+    esac
+done
+
+# If every provided argument is a number, cancel them directly
+all_numeric=1
+for a in "$@"; do
+    if ! [[ "$a" =~ ^[0-9]+$ ]]; then
+        all_numeric=0
+        break
+    fi
+done
+if [ $all_numeric -eq 1 ]; then
+    scancel "$@"
+    exit $?
+fi
+
+# treat args as a pattern (space-separated words are ANDed, case-insensitive)
+pattern="$*"
+format='%.15i %.15j %.4C %.5m %.9M %.2t %.8N %b'
+
+out=$(squeue -u "$USER" -o "$format" | awk -v pat="$pattern" '
+BEGIN { n = split(tolower(pat), toks, /[[:space:]]+/) }
+NR == 1 { print; next }
+{
+    job = tolower($2)
+    ok = 1
+    for (i = 1; i <= n; i++) {
+        if (toks[i] == "") continue
+        if (index(job, toks[i]) == 0) { ok = 0; break }
+    }
+    if (ok) print
+}' )
+
+# collect job ids (skip header)
+ids=$(printf "%s\n" "$out" | awk 'NR>1 { print $1 }')
+
+if [ -z "$ids" ]; then
+    echo "No matching jobs found for pattern: $pattern" >&2
+    exit 1
+fi
+
+# show matches then prompt
+printf "%s\n" "$out"
+read -r -p "Cancel job(s) above? [y/N] " ans
+case "$ans" in
+    [yY])
+        # convert newline-separated ids into array safely
+        read -r -a idarr <<< "$(echo "$ids" | tr '\n' ' ')"
+        scancel "${idarr[@]}"
+        exit $? ;;
+    *)
+        echo "Aborted." ; exit 0 ;;
+esac
