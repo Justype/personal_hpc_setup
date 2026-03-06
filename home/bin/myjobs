@@ -1,25 +1,90 @@
 #!/bin/bash
 
-# usage: myjobs [name pattern ANDed together]
-pattern="$*"
+# Initialize variables
+cancel_mode=false
+auto_yes=false
+pattern=""
+
+# Add print_help method
+print_help() {
+    echo "Usage: myjobs [options] [name pattern ANDed together]"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help message and exit."
+    echo "  -c            Cancel the matching jobs. Can be placed anywhere."
+    echo "  -y            Skip confirmation prompt when canceling."
+    echo ""
+    echo "Description:"
+    echo "  Lists or cancels SLURM jobs matching ALL provided patterns."
+    echo "  Patterns are case-insensitive and match against the job name."
+    echo ""
+    echo "Examples:"
+    echo "  myjobs sim run1       # List jobs with 'sim' AND 'run1' in the name"
+    echo "  myjobs -c test        # Cancel jobs with 'test' in the name (will prompt)"
+    echo "  myjobs gpu -yc fold   # Cancel jobs with 'gpu' AND 'fold' (no prompt)"
+}
+
+# Iterate through all positional arguments
+for arg in "$@"; do
+    case "$arg" in
+        --help)
+            print_help
+            exit 0
+            ;;
+        -*)
+            # Loop through each character in the flag (e.g., -yc -> y, then c)
+            for (( i=1; i<${#arg}; i++ )); do
+                opt="${arg:$i:1}"
+                case "$opt" in
+                    h)
+                        print_help
+                        exit 0
+                        ;;
+                    c)
+                        cancel_mode=true
+                        ;;
+                    y)
+                        auto_yes=true
+                        ;;
+                    *)
+                        echo "Error: Invalid option '-$opt' in '$arg'" >&2
+                        echo "" >&2
+                        print_help >&2
+                        exit 2
+                        ;;
+                esac
+            done
+            ;;
+        --*)
+            echo "Error: Invalid option '$arg'" >&2
+            echo "" >&2
+            print_help >&2
+            exit 2
+            ;;
+        *)
+            # Append non-flag arguments to build the space-separated pattern string
+            if [ -z "$pattern" ]; then
+                pattern="$arg"
+            else
+                pattern="$pattern $arg"
+            fi
+            ;;
+    esac
+done
 
 if command -v squeue &> /dev/null; then
-    # i: job id
-    # j: job name
-    # u: user name
-    # C: number of CPUs
-    # m: memory
-    # M: time used
-    # t: job state
-    # N: node list
-    # b: GRES (resources, like GPUs)
-    format='%.15i %.15j %.4C %.5m %.9M %.2t %.8N %b'
+    // i=>id, j=>name, C=>CPUs, m=>mem, M=>time used, t=>job state, N=>node list, b=>GRES, E=>reason for pending
+    format='%.13i %.12j %.4C %.5m %.9M %.2t %.8N %.15b %.E'
+    
+    # Isolate the header so it doesn't get mixed into job IDs later
+    header=$(squeue -u "$USER" -o "$format" | head -n 1)
+    
+    # Grab just the jobs (skipping the header) and filter them
     if [ -z "$pattern" ]; then
-        squeue -u "$USER" -o "$format"
+        job_list=$(squeue -u "$USER" -o "$format" | tail -n +2)
     else
-        squeue -u "$USER" -o "$format" | awk -v pat="$pattern" '
+        job_list=$(squeue -u "$USER" -o "$format" | tail -n +2 | awk -v pat="$pattern" '
         BEGIN { n = split(tolower(pat), toks, /[[:space:]]+/) }
-        NR == 1 { print; next }
         {
             job = tolower($2)
             ok = 1
@@ -28,6 +93,47 @@ if command -v squeue &> /dev/null; then
                 if (index(job, toks[i]) == 0) { ok = 0; break }
             }
             if (ok) print
-        }'
+        }')
+    fi
+
+    # Handle empty results
+    if [ -z "$job_list" ]; then
+        echo "$header"
+        exit 0
+    fi
+
+    # Cancel or Display
+    if [ "$cancel_mode" = true ]; then
+        # Count the number of jobs being cancelled
+        job_count=$(echo "$job_list" | wc -l)
+        
+        echo "The following jobs will be cancelled:"
+        echo "$header"
+        echo "$job_list"
+        echo "------------------------------------"
+        
+        # Extract Job IDs (column 1)
+        ids=$(echo "$job_list" | awk '{print $1}')
+
+        # Prompt for confirmation unless -y was passed
+        if [ "$auto_yes" = false ]; then
+            read -p "Are you sure you want to cancel these $job_count job(s)? [y/N] " confirm
+            case "$confirm" in 
+                [yY]|[yY][eE][sS]) 
+                    ;;
+                *)
+                    echo "Cancellation aborted."
+                    exit 0
+                    ;;
+            esac
+        fi
+
+        # Pass to scancel
+        scancel $ids
+        echo "Sent cancel signal to job(s): $ids"
+    else
+        echo "$header"
+        echo "$job_list"
     fi
 fi
+
