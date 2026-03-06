@@ -4,7 +4,6 @@ home/.shellrc
 home/.tmux.conf
 home/.vimrc
 home/bin/code-server-helper
-home/bin/mycancel
 home/bin/myjobs
 home/bin/rstudio-server-helper
 home/bin/t
