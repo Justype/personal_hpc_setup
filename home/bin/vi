@@ -12,8 +12,8 @@ if command -v condatainer &> /dev/null; then
     fi
     condatainer exec -o nvim nvim "$@"
     if [ $? -ne 0 ]; then
-        /bin/vim "$@"
+        vim "$@"
     fi
 else
-    /bin/vim "$@"
+    vim "$@"
 fi

@@ -74,7 +74,7 @@ done
 
 if command -v squeue &> /dev/null; then
     # i=>id, j=>name, C=>CPUs, m=>mem, M=>time used, t=>job state, N=>node list, b=>GRES, E=>reason for pending
-    format='%.13i %.12j %.4C %.5m %.9M %.2t %.8N %.15b %.E'
+    format='%.15i %.12j %.4C %.5m %.9M %.2t %.8N %.15b %.E'
     
     # Isolate the header so it doesn't get mixed into job IDs later
     header=$(squeue -u "$USER" -o "$format" | head -n 1)
