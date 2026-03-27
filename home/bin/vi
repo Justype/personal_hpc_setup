@@ -6,13 +6,14 @@ if command -v nvim &> /dev/null; then
 fi
 
 if command -v condatainer &> /dev/null; then
-    if ! condatainer ls -e nvim > /dev/null; then
-        echo creating condatainer 'nvim'...
-        condatainer create -n nvim nvim nodejs
-    fi
     condatainer exec -o nvim nvim "$@"
     if [ $? -ne 0 ]; then
-        vim "$@"
+        condatainer create -n nvim nvim nodejs
+        if [ $? -ne 0 ]; then
+            vim "$@"
+        else
+            condatainer exec -o nvim nvim "$@"
+        fi
     fi
 else
     vim "$@"
